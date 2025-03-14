@@ -1,0 +1,128 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies (Client)
+      run: |
+        cd client
+        npm ci
+      if: hashFiles('client/package-lock.json') != ''
+    
+    - name: Lint (Client)
+      run: |
+        cd client
+        npm run lint
+      if: hashFiles('client/package-lock.json') != ''
+    
+    - name: Install dependencies (Server)
+      run: |
+        cd server
+        npm ci
+      if: hashFiles('server/package-lock.json') != ''
+    
+    - name: Lint (Server)
+      run: |
+        cd server
+        npm run lint
+      if: hashFiles('server/package-lock.json') != ''
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies (Client)
+      run: |
+        cd client
+        npm ci
+      if: hashFiles('client/package-lock.json') != ''
+    
+    - name: Test (Client)
+      run: |
+        cd client
+        npm test
+      if: hashFiles('client/package-lock.json') != ''
+    
+    - name: Install dependencies (Server)
+      run: |
+        cd server
+        npm ci
+      if: hashFiles('server/package-lock.json') != ''
+    
+    - name: Test (Server)
+      run: |
+        cd server
+        npm test
+      env:
+        MONGODB_URI: mongodb://localhost:27017/test
+        JWT_SECRET: test_secret
+      if: hashFiles('server/package-lock.json') != ''
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies (Client)
+      run: |
+        cd client
+        npm ci
+      if: hashFiles('client/package-lock.json') != ''
+    
+    - name: Build (Client)
+      run: |
+        cd client
+        npm run build
+      if: hashFiles('client/package-lock.json') != ''
+    
+    - name: Install dependencies (Server)
+      run: |
+        cd server
+        npm ci
+      if: hashFiles('server/package-lock.json') != ''
+    
+    - name: Build (Server)
+      run: |
+        cd server
+        npm run build
+      if: hashFiles('server/package-lock.json') != ''
