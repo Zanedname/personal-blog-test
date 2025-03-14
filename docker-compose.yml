@@ -1,0 +1,54 @@
+version: '3'
+
+services:
+  mongodb:
+    image: mongo:6.0
+    container_name: blog-mongodb
+    volumes:
+      - mongodb_data:/data/db
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=personal-blog
+    restart: unless-stopped
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: blog-server
+    depends_on:
+      - mongodb
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - MONGODB_URI=mongodb://mongodb:27017/personal-blog
+      - JWT_SECRET=your_jwt_secret_key
+      - JWT_EXPIRES_IN=7d
+      - CORS_ORIGIN=http://localhost:3000
+      - UPLOAD_DIR=uploads
+      - MAX_FILE_SIZE=5242880
+      - LOG_LEVEL=info
+      - LOG_FILE=logs/app.log
+    volumes:
+      - ./server/uploads:/app/uploads
+      - ./server/logs:/app/logs
+    restart: unless-stopped
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: blog-client
+    depends_on:
+      - server
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:4000/api
+    restart: unless-stopped
+
+volumes:
+  mongodb_data:
